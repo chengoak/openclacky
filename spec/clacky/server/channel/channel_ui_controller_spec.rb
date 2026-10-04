@@ -228,6 +228,32 @@ RSpec.describe Clacky::Channel::ChannelUIController do
       expect(sent).to be_empty
     end
 
+    it "detaches a finished progress card so the next web turn's reply is sent as text" do
+      progress_controller.start_task
+      progress_controller.show_assistant_message("First result", files: [])
+
+      # A web-originated follow-up after the card reached a terminal state (#603).
+      progress_controller.show_user_message("next question")
+      progress_controller.show_assistant_message("Next result", files: [])
+
+      expect(progress_updates).to eq([
+        ["chat_1", "card_1", "First result", :success]
+      ])
+      expect(sent).to eq(["[USER] next question", "Next result"])
+    end
+
+    it "does not clear a still-running progress card on a web user message" do
+      progress_controller.start_task
+
+      progress_controller.show_user_message("quick follow-up")
+      progress_controller.show_assistant_message("Result", files: [])
+
+      expect(progress_updates).to eq([
+        ["chat_1", "card_1", "Result", :success]
+      ])
+      expect(sent).to eq(["[USER] quick follow-up"])
+    end
+
     it "falls back to a normal final message when the card update fails" do
       progress_controller.start_task
       allow(progress_adapter).to receive(:update_progress).and_return(false)
