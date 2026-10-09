@@ -5970,7 +5970,8 @@ body {
   z-index: 1;
   min-height: 0;
 }
-.sib-bench-btn {
+.sib-bench-btn,
+.sib-addmodel-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.1875rem;
@@ -5984,10 +5985,17 @@ body {
   border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.15s, border-color 0.15s, color 0.15s;
-  order: 2;   /* force button to the right even if DOM order changes */
   flex: 0 0 auto;
 }
-.sib-bench-btn:hover:not(:disabled) {
+.sib-bench-btn {
+  order: 2;   /* force button to the right even if DOM order changes */
+}
+/* Left edge, ahead of the hint (order 1) and the benchmark chip (order 2). */
+.sib-addmodel-btn {
+  order: 0;
+}
+.sib-bench-btn:hover:not(:disabled),
+.sib-addmodel-btn:hover {
   background: var(--color-bg-hover);
   border-color: var(--color-accent-primary);
   color: var(--color-accent-primary);
