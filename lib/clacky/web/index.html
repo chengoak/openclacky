@@ -1499,7 +1499,13 @@
           <label class="model-field">
             <span class="field-label">
               <span data-i18n="settings.models.field.apikey">API Key</span>
-              <a class="get-apikey-link" id="model-modal-apikey-link" href="#" target="_blank" rel="noopener" style="display:none;margin-left:0.5rem;font-size:0.75rem;color:var(--accent,#6366f1);text-decoration:none;opacity:0.85;" data-i18n="settings.models.field.getApiKey">How to get →</a>
+              <a class="get-apikey-link" id="model-modal-apikey-link" href="#" target="_blank" rel="noopener" style="display:none">
+                <span data-i18n="settings.models.field.getApiKey">Get API Key</span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M7 17L17 7"></path>
+                  <path d="M8 7h9v9"></path>
+                </svg>
+              </a>
             </span>
             <div class="field-input-row">
               <input type="password" id="model-modal-apikey" class="field-input api-key-input" placeholder="sk-..." autocomplete="off">
@@ -1509,6 +1515,14 @@
                 </svg>
               </button>
             </div>
+            <span class="field-apikey-hint" id="model-modal-apikey-hint" style="display:none">
+              <svg class="field-apikey-hint-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4"></path>
+                <path d="M12 8h.01"></path>
+              </svg>
+              <span data-i18n="settings.models.field.apikeyHint">Paste your API key and save — everything else is already set up.</span>
+            </span>
           </label>
 
           <label class="model-field">

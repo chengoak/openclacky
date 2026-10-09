@@ -7419,6 +7419,50 @@ body {
 .field-label {
   font-size: 0.75rem;
   color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+/* Deliberately an underlined text link, not a filled chip: it sits inline with
+   the "API Key" label, and a second accent-filled block on the same screen
+   competes with the primary Save button. The underline carries the affordance
+   the plain-text version lacked. */
+.get-apikey-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1875rem;
+  color: var(--color-accent-primary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+  text-decoration-color: color-mix(in srgb, var(--color-accent-primary) 45%, transparent);
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+.get-apikey-link:hover {
+  color: var(--color-accent-hover);
+  text-decoration-color: currentColor;
+}
+.get-apikey-link svg { flex-shrink: 0; }
+/* The "one field left to fill" reassurance. Only rendered for preset
+   providers, where Base URL / Model are auto-filled (see _syncApikeyHint).
+   Icon stays neutral so it reads as guidance, not as a "done" state. */
+.field-apikey-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3125rem;
+  font-size: 0.6875rem;
+  line-height: 1.55;
+  color: var(--color-text-tertiary);
+}
+.field-apikey-hint-icon {
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-top: 0.125rem;
 }
 .field-input {
   background: var(--color-bg-primary);
