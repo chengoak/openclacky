@@ -1036,7 +1036,31 @@ module Clacky
     # Costs for prompts between 200K–272K will be slightly over-estimated.
     TIERED_PRICING_THRESHOLD = 200_000
 
+    # Series-wide promotions, applied on top of PRICING_TABLE. Rules match the
+    # model alias the user selected rather than the pricing-table key: a
+    # platform-served "abs-claude-*" and a BYOK "claude-*" normalise to the
+    # same PRICING_TABLE entry, so discounting the table itself would silently
+    # cut the price for customers who bring their own credentials. The "oc-*"
+    # aliases exist only on the platform side, so their rules stay narrower than
+    # the BYOK ids leaning on the same list price.
+    # The gateway mirrors this list - see seriesDiscount in llm_proxy.
+    DISCOUNT_RULES = [
+      { match: /\Aabs-claude-/, rate: 0.8 },  # Claude series - 20% off
+      { match: /\Aoc-glm-/, rate: 0.95 },     # GLM via TokHub - 5% off
+      { match: /\Aoc-kimi-/, rate: 0.95 }     # Kimi via TokHub - 5% off
+    ].freeze
+
     class << self
+      # Multiplier applied to the final price for a model alias: 1.0 when no
+      # promotion applies, otherwise the matching rule's rate.
+      def discount_rate(model)
+        name = model.to_s.downcase
+        return 1.0 if name.empty?
+
+        rule = DISCOUNT_RULES.find { |r| r[:match].match?(name) }
+        rule ? rule[:rate] : 1.0
+      end
+
       # Calculate cost for the given model and usage
       #
       # @param model [String] Model identifier
@@ -1092,8 +1116,10 @@ module Clacky
           over_threshold: over_threshold
         )
 
+        # Promotions are keyed on the requested alias, so apply them last: the
+        # table above holds list prices shared with BYOK callers.
         {
-          cost: input_cost + output_cost + cache_cost,
+          cost: (input_cost + output_cost + cache_cost) * discount_rate(model),
           source: source
         }
       end

@@ -6206,6 +6206,17 @@ body {
   min-width: 2.25rem;
   text-align: right;
 }
+/* Promotion badge appended to a price cell when a series discount applies
+   (e.g. "8折" / "20% off"). Green reads as a saving, unlike the neutral
+   sub-model "default" tag. */
+.sib-model-discount {
+  margin-left: 0.25rem;
+  font-size: 0.5625rem;
+  padding: 1px 0.3125rem;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-success) 16%, transparent);
+  color: var(--color-success);
+}
 .sib-model-option .sib-model-latency {
   font-size: 0.625rem;
   font-variant-numeric: tabular-nums;

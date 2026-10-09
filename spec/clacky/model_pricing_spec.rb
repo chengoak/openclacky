@@ -41,7 +41,7 @@ RSpec.describe Clacky::ModelPricing do
     end
     
     context "with Claude Sonnet 5" do
-      let(:model) { "abs-claude-sonnet-5" }
+      let(:model) { "claude-sonnet-5" }
 
       it "calculates cost for basic input/output (flat rate, no 200K tier)" do
         usage = {
@@ -126,7 +126,7 @@ RSpec.describe Clacky::ModelPricing do
         # Cache write: (20,000 / 1,000,000) * $2.50 = $0.05
         # Cache read: (30,000 / 1,000,000) * $0.10 = $0.003
         # Total: $0.693
-        result = described_class.calculate_cost(model: "abs-claude-sonnet-5-5", usage: usage)
+        result = described_class.calculate_cost(model: "claude-sonnet-5-5", usage: usage)
         expect(result[:cost]).to be_within(0.001).of(0.693)
         expect(result[:source]).to eq(:price)
       end
@@ -153,7 +153,7 @@ RSpec.describe Clacky::ModelPricing do
     end
 
     context "with Claude Opus 5" do
-      let(:model) { "abs-claude-opus-5" }
+      let(:model) { "claude-opus-5" }
 
       it "calculates cost for basic input/output (flat rate, no 200K tier)" do
         usage = {
@@ -876,6 +876,56 @@ RSpec.describe Clacky::ModelPricing do
     end
   end
   
+  describe "series promotions" do
+    it "applies the Claude discount to platform-served aliases" do
+      usage = { prompt_tokens: 1_000_000, completion_tokens: 1_000_000 }
+
+      # Sonnet 5 lists at $2 in / $10 out, so 8折 bills $1.60 / $8.00.
+      result = described_class.calculate_cost(model: "abs-claude-sonnet-5", usage: usage)
+
+      expect(result[:cost]).to be_within(0.001).of(9.60)
+      expect(result[:source]).to eq(:price)
+    end
+
+    it "keeps BYOK ids sharing the same table entry at list price" do
+      usage = { prompt_tokens: 1_000_000, completion_tokens: 1_000_000 }
+
+      expect(described_class.calculate_cost(model: "claude-sonnet-5", usage: usage)[:cost])
+        .to be_within(0.001).of(12.00)
+    end
+
+    it "applies the smaller TokHub discount to the oc-prefixed aliases" do
+      usage = { prompt_tokens: 1_000_000, completion_tokens: 1_000_000 }
+
+      # GLM 5.3 lists at $1.142 in / $4.00 out and Kimi K3 at $3.00 / $15.00.
+      expect(described_class.calculate_cost(model: "oc-glm-5.3", usage: usage)[:cost])
+        .to be_within(0.001).of(4.8849)
+      expect(described_class.calculate_cost(model: "oc-kimi-k3", usage: usage)[:cost])
+        .to be_within(0.001).of(17.10)
+    end
+
+    it "leaves the BYOK ids sitting behind those same models at list price" do
+      usage = { prompt_tokens: 1_000_000, completion_tokens: 1_000_000 }
+
+      expect(described_class.calculate_cost(model: "glm-5.3", usage: usage)[:cost])
+        .to be_within(0.001).of(5.80)
+      expect(described_class.calculate_cost(model: "kimi-k3", usage: usage)[:cost])
+        .to be_within(0.001).of(18.00)
+    end
+
+    it "matches the whole alias family and nothing else" do
+      expect(described_class.discount_rate("abs-claude-opus-5-5")).to eq(0.8)
+      expect(described_class.discount_rate("abs-claude-haiku-4-5")).to eq(0.8)
+      expect(described_class.discount_rate("claude-opus-5-5")).to eq(1.0)
+      expect(described_class.discount_rate("oc-glm-5.3")).to eq(0.95)
+      expect(described_class.discount_rate("oc-kimi-k3")).to eq(0.95)
+      expect(described_class.discount_rate("glm-5.3")).to eq(1.0)
+      expect(described_class.discount_rate("kimi-k3")).to eq(1.0)
+      expect(described_class.discount_rate("abs-gpt-6.1-sol")).to eq(1.0)
+      expect(described_class.discount_rate(nil)).to eq(1.0)
+    end
+  end
+
   describe ".get_pricing" do
     it "returns pricing for known models" do
       pricing = described_class.get_pricing("claude-opus-4.5")

@@ -28,18 +28,17 @@ RSpec.describe Clacky::Server::ModelPrices do
     end
 
     it "calculates ratios against the baseline default rates" do
-      result = described_class.build("abs-claude-fable-5,abs-claude-opus-4-6,abs-claude-haiku-4-5")
+      result = described_class.build("claude-sonnet-4-6,or-gemini-3-5-flash")
       base_total = 2.0 + 10.0
 
-      expect(result[:prices]["abs-claude-fable-5"][:ratio]).to be_within(0.001).of((10.0 + 50.0) / base_total)
-      expect(result[:prices]["abs-claude-opus-4-6"][:ratio]).to be_within(0.001).of((5.0 + 25.0) / base_total)
-      expect(result[:prices]["abs-claude-haiku-4-5"][:ratio]).to be_within(0.001).of((1.0 + 5.0) / base_total)
+      expect(result[:prices]["claude-sonnet-4-6"][:ratio]).to be_within(0.001).of((3.0 + 15.0) / base_total)
+      expect(result[:prices]["or-gemini-3-5-flash"][:ratio]).to be_within(0.001).of((0.5 + 3.0) / base_total)
     end
 
     it "returns input/output prices alongside the ratio" do
-      result = described_class.build("abs-claude-sonnet-5")
+      result = described_class.build("or-gemini-3-5-flash")
 
-      expect(result[:prices]["abs-claude-sonnet-5"]).to eq(in: 2.0, out: 10.0, ratio: 1.0)
+      expect(result[:prices]["or-gemini-3-5-flash"]).to eq(in: 0.5, out: 3.0, ratio: (0.5 + 3.0) / 12.0)
     end
 
     it "applies provider prefix and alias normalization" do
@@ -66,6 +65,54 @@ RSpec.describe Clacky::Server::ModelPrices do
       result = described_class.build(" abs-claude-sonnet-5 ")
 
       expect(result[:prices]).to have_key("abs-claude-sonnet-5")
+    end
+
+    context "with an active series promotion" do
+      let(:base_total) { 2.0 + 10.0 }
+
+      it "discounts the platform-served Claude aliases and reports the rate" do
+        result = described_class.build("abs-claude-sonnet-5,abs-claude-fable-5")
+
+        expect(result[:prices]["abs-claude-sonnet-5"]).to eq(
+          in: 1.6, out: 8.0, ratio: (1.6 + 8.0) / base_total, discount: { rate: 0.8 }
+        )
+        expect(result[:prices]["abs-claude-fable-5"]).to eq(
+          in: 8.0, out: 40.0, ratio: (8.0 + 40.0) / base_total, discount: { rate: 0.8 }
+        )
+      end
+
+      it "keeps the baseline at list price so the ratio stays comparable" do
+        result = described_class.build("abs-claude-sonnet-5")
+
+        expect(result[:baseline]).to eq(model: "claude-sonnet-5", in: 2.0, out: 10.0)
+      end
+
+      it "leaves BYOK ids sharing the same pricing entry at list price" do
+        result = described_class.build("claude-sonnet-5,claude-sonnet-5-5,claude-opus-5")
+
+        expect(result[:prices]["claude-sonnet-5"]).to eq(in: 2.0, out: 10.0, ratio: 1.0)
+        expect(result[:prices]["claude-sonnet-5-5"]).to eq(in: 2.0, out: 10.0, ratio: 1.0)
+        expect(result[:prices]["claude-opus-5"]).to eq(in: 5.0, out: 25.0, ratio: (5.0 + 25.0) / base_total)
+      end
+
+      it "applies the TokHub promotion to the oc-prefixed aliases" do
+        result = described_class.build("oc-glm-5.3,oc-kimi-k3")
+
+        expect(result[:prices]["oc-glm-5.3"]).to eq(
+          in: 1.0849, out: 3.8, ratio: (1.0849 + 3.8) / base_total,
+          discount: { rate: 0.95 }
+        )
+        expect(result[:prices]["oc-kimi-k3"]).to eq(
+          in: 2.85, out: 14.25,
+          ratio: (2.85 + 14.25) / base_total, discount: { rate: 0.95 }
+        )
+      end
+
+      it "omits the discount flag for models outside the promotion" do
+        result = described_class.build("or-gemini-3-5-flash")
+
+        expect(result[:prices]["or-gemini-3-5-flash"]).not_to have_key(:discount)
+      end
     end
 
     context "with DeepSeek time-of-day tiers" do
