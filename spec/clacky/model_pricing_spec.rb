@@ -49,11 +49,11 @@ RSpec.describe Clacky::ModelPricing do
           completion_tokens: 50_000
         }
 
-        # Input: (100,000 / 1,000,000) * $3 = $0.30
-        # Output: (50,000 / 1,000,000) * $15 = $0.75
-        # Total: $1.05
+        # Input: (100,000 / 1,000,000) * $2 = $0.20
+        # Output: (50,000 / 1,000,000) * $10 = $0.50
+        # Total: $0.70
         result = described_class.calculate_cost(model: model, usage: usage)
-        expect(result[:cost]).to be_within(0.001).of(1.05)
+        expect(result[:cost]).to be_within(0.001).of(0.70)
         expect(result[:source]).to eq(:price)
       end
 
@@ -63,11 +63,11 @@ RSpec.describe Clacky::ModelPricing do
           completion_tokens: 50_000
         }
 
-        # Input: (250,000 / 1,000,000) * $3 = $0.75 (same rate as ≤200K)
-        # Output: (50,000 / 1,000,000) * $15 = $0.75
-        # Total: $1.50
+        # Input: (250,000 / 1,000,000) * $2 = $0.50 (same rate as ≤200K)
+        # Output: (50,000 / 1,000,000) * $10 = $0.50
+        # Total: $1.00
         result = described_class.calculate_cost(model: model, usage: usage)
-        expect(result[:cost]).to be_within(0.001).of(1.50)
+        expect(result[:cost]).to be_within(0.001).of(1.00)
         expect(result[:source]).to eq(:price)
       end
 
@@ -79,13 +79,13 @@ RSpec.describe Clacky::ModelPricing do
           cache_read_input_tokens: 30_000
         }
 
-        # Regular input (non-cached): (70,000 / 1,000,000) * $3 = $0.21
-        # Output: (50,000 / 1,000,000) * $15 = $0.75
-        # Cache write: (20,000 / 1,000,000) * $3.75 = $0.075
-        # Cache read: (30,000 / 1,000,000) * $0.30 = $0.009
-        # Total: $1.044
+        # Regular input (non-cached): (70,000 / 1,000,000) * $2 = $0.14
+        # Output: (50,000 / 1,000,000) * $10 = $0.50
+        # Cache write: (20,000 / 1,000,000) * $2.50 = $0.05
+        # Cache read: (30,000 / 1,000,000) * $0.20 = $0.006
+        # Total: $0.696
         result = described_class.calculate_cost(model: model, usage: usage)
-        expect(result[:cost]).to be_within(0.001).of(1.044)
+        expect(result[:cost]).to be_within(0.001).of(0.696)
         expect(result[:source]).to eq(:price)
       end
 
@@ -95,6 +95,46 @@ RSpec.describe Clacky::ModelPricing do
         # by coincidence, so assert via normalize_model_name instead to catch
         # any future accidental merge of the two pricing keys.
         expect(described_class.normalize_model_name("abs-claude-sonnet-4-5")).to eq("claude-sonnet-4.5")
+        expect(described_class.normalize_model_name("abs-claude-sonnet-5")).to eq("claude-sonnet-5")
+      end
+    end
+
+    context "with Claude Sonnet 5.5" do
+      it "shares Sonnet 5 input/output rates but keeps its halved cache-read rate" do
+        sonnet_5_5 = described_class.get_pricing("claude-sonnet-5.5")
+        sonnet_5 = described_class.get_pricing("claude-sonnet-5")
+
+        expect(sonnet_5_5[:input]).to eq(sonnet_5[:input])
+        expect(sonnet_5_5[:output]).to eq(sonnet_5[:output])
+        expect(sonnet_5_5[:cache][:write]).to eq(sonnet_5[:cache][:write])
+        # Cache reads were halved from $0.20 to $0.10 on 2026-10-07; Sonnet 5
+        # itself was not included in that cut.
+        expect(sonnet_5_5[:cache][:read]).to eq(0.10)
+        expect(sonnet_5[:cache][:read]).to eq(0.20)
+      end
+
+      it "calculates cost with cache write and read" do
+        usage = {
+          prompt_tokens: 100_000,
+          completion_tokens: 50_000,
+          cache_creation_input_tokens: 20_000,
+          cache_read_input_tokens: 30_000
+        }
+
+        # Regular input (non-cached): (70,000 / 1,000,000) * $2 = $0.14
+        # Output: (50,000 / 1,000,000) * $10 = $0.50
+        # Cache write: (20,000 / 1,000,000) * $2.50 = $0.05
+        # Cache read: (30,000 / 1,000,000) * $0.10 = $0.003
+        # Total: $0.693
+        result = described_class.calculate_cost(model: "abs-claude-sonnet-5-5", usage: usage)
+        expect(result[:cost]).to be_within(0.001).of(0.693)
+        expect(result[:source]).to eq(:price)
+      end
+
+      it "does not collide with claude-sonnet-5 (regression guard)" do
+        expect(described_class.normalize_model_name("abs-claude-sonnet-5-5")).to eq("claude-sonnet-5.5")
+        expect(described_class.normalize_model_name("global.anthropic.claude-sonnet-5-5")).to eq("claude-sonnet-5.5")
+        expect(described_class.normalize_model_name("anthropic/claude-sonnet-5.5")).to eq("claude-sonnet-5.5")
         expect(described_class.normalize_model_name("abs-claude-sonnet-5")).to eq("claude-sonnet-5")
       end
     end

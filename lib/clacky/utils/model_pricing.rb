@@ -40,21 +40,40 @@ module Clacky
         }
       },
 
-      # Claude Sonnet 5 / Opus 5 (2026) — flat rate, no 200K tier (matches
+      # Claude Sonnet 5 (2026) — flat rate, no 200K tier (matches
       # llm_proxy's costMap: single price regardless of prompt length).
       # Source: openclacky-platform/llm_proxy/internal/proxy/proxy.go
       "claude-sonnet-5" => {
         input: {
-          default: 3.00,               # $3/MTok, same for all tiers
-          over_200k: 3.00
+          default: 2.00,               # $2/MTok, same for all tiers
+          over_200k: 2.00
         },
         output: {
-          default: 15.00,              # $15/MTok, same for all tiers
-          over_200k: 15.00
+          default: 10.00,              # $10/MTok, same for all tiers
+          over_200k: 10.00
         },
         cache: {
-          write: 3.75,                 # $3.75/MTok cache write
-          read: 0.30                   # $0.30/MTok cache read
+          write: 2.50,                 # $2.50/MTok cache write
+          read: 0.20                   # $0.20/MTok cache read
+        }
+      },
+
+      # Claude Sonnet 5.5 (2026) — same input/output as Sonnet 5, but its
+      # cache read was halved on 2026-10-07 ($0.20 -> $0.10), so the two
+      # entries can no longer be shared.
+      # Source: openclacky-platform/llm_proxy/internal/proxy/proxy.go
+      "claude-sonnet-5.5" => {
+        input: {
+          default: 2.00,               # $2/MTok, same for all tiers
+          over_200k: 2.00
+        },
+        output: {
+          default: 10.00,              # $10/MTok, same for all tiers
+          over_200k: 10.00
+        },
+        cache: {
+          write: 2.50,                 # $2.50/MTok cache write (5min TTL)
+          read: 0.10                   # $0.10/MTok cache read — 0.05x base input
         }
       },
 
@@ -1094,6 +1113,11 @@ module Clacky
         # with "sonnet-4-5" / "opus-4-5", which are handled by the 4.x
         # tiered-pricing branches below. Also matches Bedrock cross-region
         # prefixes like "global.anthropic.claude-sonnet-5".
+        # Claude Sonnet 5.5 must precede the branch below: its (?!\d)
+        # lookahead still accepts "sonnet-5-5" (a dash is not a digit), and
+        # 5.5's cache-read price diverged from 5's on 2026-10-07.
+        when /claude.*sonnet-5[.-]5/i
+          "claude-sonnet-5.5"
         when /claude.*sonnet-5(?!\d)/i
           "claude-sonnet-5"
         # Claude Opus 5.5 (2026) must precede the "opus-5" branch below: its
