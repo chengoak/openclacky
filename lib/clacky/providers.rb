@@ -38,6 +38,8 @@ module Clacky
           "auto",
           "dsk-deepseek-flash",
           "dsk-deepseek-v4-pro",
+          "oc-glm-5.3",
+          "oc-kimi-k3",
           "abs-gpt-6-astra",
           "abs-gpt-6.1-sol",
           "abs-gpt-6-sol",
@@ -143,9 +145,13 @@ module Clacky
         # images uploaded for text-only models must be downgraded to disk
         # refs. Gemini 3.1 Pro keeps the provider-default vision=true
         # (it accepts image/audio/video input natively via OpenRouter).
+        # oc-glm-5.3 is likewise text-only: its upstream rejects any content
+        # block other than `type: "text"`, so images must never be sent
+        # inline. oc-kimi-k3 is natively multimodal and keeps vision=true.
         "model_capabilities" => {
           "dsk-deepseek-flash"  => { "vision" => true }.freeze,
-          "dsk-deepseek-v4-pro" => { "vision" => false }.freeze
+          "dsk-deepseek-v4-pro" => { "vision" => false }.freeze,
+          "oc-glm-5.3"          => { "vision" => false }.freeze
         }.freeze,
         # Bedrock GPT models (abs-gpt-*) are served through the OpenAI
         # Responses API — their Chat Completions endpoint rejects function

@@ -43,6 +43,11 @@ module Clacky
         "abs-claude-sonnet-4-6" => "global.anthropic.claude-sonnet-4-6",
         "abs-claude-sonnet-4-5" => "global.anthropic.claude-sonnet-4-5",
         "abs-claude-haiku-4-5"  => "global.anthropic.claude-haiku-4-5",
+        # GLM / Kimi via TokHub (oc-). The gateway books these under the alias
+        # itself, so the mapping is an identity — it exists so the billing UI
+        # can resolve the alias instead of dropping the record as unknown.
+        "oc-glm-5.3"            => "oc-glm-5.3",
+        "oc-kimi-k3"            => "oc-kimi-k3",
         # gemini chat (or-)
         "or-gemini-3-1-pro"   => "gemini-3.1-pro-preview",
         "or-gemini-3-8-flash" => "gemini-3.8-flash",

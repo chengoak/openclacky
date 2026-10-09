@@ -46,9 +46,9 @@ RSpec.describe Clacky::MessageFormat::Bedrock do
       )
     end
 
-    it "omits them for non-Anthropic Converse models such as Z.AI GLM 5.3" do
+    it "omits them for non-Anthropic Converse models such as Gemini 3.1 Pro" do
       body = described_class.build_request_body(
-        messages, "abs-glm-5.3", tools, max_tokens, false, reasoning_effort: "high"
+        messages, "or-gemini-3-1-pro", tools, max_tokens, false, reasoning_effort: "high"
       )
 
       expect(body).not_to have_key(:additionalModelRequestFields)

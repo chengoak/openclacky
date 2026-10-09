@@ -1518,6 +1518,37 @@ RSpec.describe Clacky::AgentConfig do
 
       expect(config.effective_ocr_entry).to be_nil
     end
+
+    it "routes openclacky oc-glm-5.3 through the Gemini sidecar (upstream is text-only)" do
+      anchor = {
+        "type"        => "default",
+        "provider_id" => "openclacky",
+        "model"       => "oc-glm-5.3",
+        "base_url"    => "https://api.openclacky.com",
+        "api_key"     => "clacky-test"
+      }
+      config = described_class.new(models: [anchor, { "type" => "ocr", "mode" => "auto" }])
+
+      result = config.effective_ocr_entry
+      expect(result["model"]).to eq("or-gemini-3-8-flash")
+      expect(result["auto_injected"]).to be true
+      expect(result["primary"]).to be_nil
+    end
+
+    it "reuses openclacky oc-kimi-k3 as its own OCR path (it is vision-capable)" do
+      anchor = {
+        "type"        => "default",
+        "provider_id" => "openclacky",
+        "model"       => "oc-kimi-k3",
+        "base_url"    => "https://api.openclacky.com",
+        "api_key"     => "clacky-test"
+      }
+      config = described_class.new(models: [anchor, { "type" => "ocr", "mode" => "auto" }])
+
+      result = config.effective_ocr_entry
+      expect(result["model"]).to eq("oc-kimi-k3")
+      expect(result["primary"]).to be true
+    end
   end
 
   describe "#media_state" do

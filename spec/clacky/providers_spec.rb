@@ -86,6 +86,16 @@ RSpec.describe Clacky::Providers do
                                          model_name: "dsk-deepseek-flash")).to be true
       end
 
+      it "returns false for openclacky + oc-glm-5.3 (upstream rejects non-text blocks)" do
+        expect(described_class.supports?("openclacky", :vision,
+                                         model_name: "oc-glm-5.3")).to be false
+      end
+
+      it "returns true for openclacky + oc-kimi-k3 (natively multimodal)" do
+        expect(described_class.supports?("openclacky", :vision,
+                                         model_name: "oc-kimi-k3")).to be true
+      end
+
       it "returns true for deepseekv4 + V4.1 Flash multimodal override" do
         expect(described_class.supports?("deepseekv4", :vision)).to be false
         expect(described_class.supports?("deepseekv4", :vision,

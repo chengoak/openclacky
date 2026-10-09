@@ -383,6 +383,41 @@ module Clacky
         }
       },
 
+      # GLM 5.3 served through the openclacky gateway (oc- prefix, TokHub
+      # upstream) — not the same thing as a Bedrock-hosted GLM. Domestic list
+      # price from bigmodel.cn: ¥8 / ¥28 / ¥2 per MTok at 7.0.
+      "oc-glm-5.3" => {
+        input: {
+          default: 1.142,                  # ¥8/MTok
+          over_200k: 1.142
+        },
+        output: {
+          default: 4.00,                   # ¥28/MTok
+          over_200k: 4.00
+        },
+        cache: {
+          write: 1.142,                    # no separate write charge; bill at miss rate
+          read: 0.2857                     # ¥2/MTok
+        }
+      },
+
+      # Kimi K3 served through the openclacky gateway (oc- prefix, TokHub
+      # upstream). Same list price as the BYOK kimi-k3 entry above.
+      "oc-kimi-k3" => {
+        input: {
+          default: 3.00,                   # $3.00/MTok cache miss
+          over_200k: 3.00
+        },
+        output: {
+          default: 15.00,                  # $15.00/MTok
+          over_200k: 15.00
+        },
+        cache: {
+          write: 3.00,                     # no separate write charge; bill at miss rate
+          read: 0.30                       # $0.30/MTok cache hit
+        }
+      },
+
       # Kimi K2.7 Code (256K context, multimodal coding model).
       # Source: https://platform.moonshot.ai (USD / 1M tokens)
       "kimi-k2.7-code" => {
