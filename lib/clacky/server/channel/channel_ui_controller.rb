@@ -75,7 +75,7 @@ module Clacky
 
       # Start one low-frequency progress message for the current task. Platforms
       # without progress updates retain the existing standalone "Thinking..." UX.
-      def start_task
+      def start_task(reply_to: :context)
         reset_progress
         return false unless status_messages?
 
@@ -85,7 +85,8 @@ module Clacky
           return false
         end
 
-        chat_id, reply_to = @mutex.synchronize { [@chat_id, @message_id] }
+        chat_id, context_reply_to = @mutex.synchronize { [@chat_id, @message_id] }
+        reply_to = context_reply_to if reply_to == :context
         result = adapter.send_progress(chat_id, progress_text("thinking"), reply_to: reply_to, state: :running)
         progress_id = result && (result[:progress_id] || result["progress_id"] ||
           result[:message_id] || result["message_id"])
@@ -114,6 +115,9 @@ module Clacky
       # Prefixed with the product/user context so it's clear who sent it.
       def show_user_message(content)
         return if content.nil? || content.to_s.strip.empty?
+
+        # Detach a finished progress card so this web turn's reply isn't swallowed (#603).
+        reset_progress if progress_finished?
 
         send_text("[USER] #{content}")
       end

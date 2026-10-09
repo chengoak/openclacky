@@ -7861,7 +7861,14 @@ module Clacky
         # File references are now handled inside agent.run — injected as a system_injected
         # message after the user message, so replay_history skips them automatically.
         reference_contexts = build_reference_contexts(references)
-        run_agent_task(session_id, agent) { agent.run(content, files: files, reference_contexts: reference_contexts, created_at: msg_created_at, references_display: references) }
+        run_agent_task(session_id, agent) do
+          # Start the progress card inside the task: run_agent_task returns early when
+          # the concurrency cap is hit, and posting beforehand would strand the card at
+          # "Thinking..." forever. A web-originated turn bound to an IM channel gets a
+          # card too, so tools/narration render like a native IM turn (#603).
+          @channel_manager.channel_ui_for_session(session_id)&.start_task(reply_to: nil)
+          agent.run(content, files: files, reference_contexts: reference_contexts, created_at: msg_created_at, references_display: references)
+        end
       end
 
       # Build context blocks for non-file @mention references. Each reference is
