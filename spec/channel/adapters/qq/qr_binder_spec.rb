@@ -6,10 +6,7 @@ require "clacky/server/channel/adapters/qq/qr_binder"
 RSpec.describe Clacky::Channel::Adapters::Qq::QrBinder do
   subject(:binder) { described_class.new }
 
-  # Fixed AES-256-GCM vector generated with a modern OpenSSL build. The system
-  # Ruby on macOS cannot encrypt GCM through its bundled openssl gem, so the
-  # round-trip fixtures are precomputed and decryption is exercised via the
-  # Gcm wrapper (which includes the libcrypto fallback).
+  # Fixed AES-256-GCM vector. The payload is iv (12) || ciphertext || tag (16).
   let(:key_b64)    { "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=" }
   let(:encrypt_b64) { "YWJjZGVmMDEyMzQ19ZOReoHmNjCVK9CvuMbijH/F0wjFRIGv+OupEoZrx+1A33znVA==" }
   let(:plaintext) { "test-app-secret-value" }

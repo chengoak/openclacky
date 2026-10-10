@@ -5,7 +5,6 @@ require "uri"
 require "net/http"
 require "securerandom"
 require "base64"
-require_relative "gcm"
 
 module Clacky
   module Channel
@@ -27,6 +26,9 @@ module Clacky
         # These endpoints require no prior login; the AES key stays on the
         # server so only this server can decrypt the returned secret.
         class QrBinder
+          NONCE_LEN = 12
+          TAG_LEN   = 16
+
           HOST          = "q.qq.com"
           CREATE_PATH   = "/lite/create_bind_task"
           POLL_PATH     = "/lite/poll_bind_result"
@@ -80,15 +82,16 @@ module Clacky
 
             raw      = Base64.decode64(encrypt_secret)
             aes_key  = Base64.decode64(key)
-            raise BindError, "payload too short" if raw.bytesize < Gcm::NONCE_LEN + Gcm::TAG_LEN
+            raise BindError, "payload too short" if raw.bytesize < NONCE_LEN + TAG_LEN
             raise BindError, "invalid bind key" if aes_key.bytesize != 32
 
-            nonce = raw.byteslice(0, Gcm::NONCE_LEN)
-            tag   = raw.byteslice(raw.bytesize - Gcm::TAG_LEN, Gcm::TAG_LEN)
-            ct    = raw.byteslice(Gcm::NONCE_LEN, raw.bytesize - Gcm::NONCE_LEN - Gcm::TAG_LEN)
+            nonce = raw.byteslice(0, NONCE_LEN)
+            tag   = raw.byteslice(raw.bytesize - TAG_LEN, TAG_LEN)
+            ct    = raw.byteslice(NONCE_LEN, raw.bytesize - NONCE_LEN - TAG_LEN)
 
             begin
-              secret = Gcm.decrypt(aes_key, nonce, ct, tag)
+              require_relative "../../../../aes_gcm"
+              secret = Clacky::AesGcm.decrypt(aes_key, nonce, ct, tag)
             rescue OpenSSL::Cipher::CipherError => e
               raise BindError, "failed to decrypt AppSecret (#{e.message})"
             end
