@@ -406,8 +406,23 @@ module Clacky
           end
 
           private def emit(data, scope:, chat_openid:, user_openid:, chat_type:)
-            text  = data["content"].to_s.strip
+            chat_id = "#{scope}:#{chat_openid}"
+            msg_id  = data["id"].to_s
+
+            if @allowed_users.any? && !@allowed_users.include?(user_openid.to_s)
+              Clacky::Logger.debug("[qq] ignoring message from #{user_openid} (not in allowed_users)")
+              return
+            end
+
+            # QQ can push the same msg_id more than once; skip duplicates BEFORE
+            # downloading attachments (up to 32 MB each).
+            if duplicate?(msg_id)
+              Clacky::Logger.debug("[qq] duplicate msg_id ignored: #{msg_id}")
+              return
+            end
+
             files = collect_files(data)
+            text  = data["content"].to_s.strip
 
             # Voice messages expose a server-side ASR hint; surface it so the agent
             # can understand spoken input even without decoding SILK.
@@ -424,20 +439,7 @@ module Clacky
               return
             end
 
-            chat_id = "#{scope}:#{chat_openid}"
-            msg_id  = data["id"].to_s
             remember_msg_id(chat_id, msg_id)
-
-            if @allowed_users.any? && !@allowed_users.include?(user_openid.to_s)
-              Clacky::Logger.debug("[qq] ignoring message from #{user_openid} (not in allowed_users)")
-              return
-            end
-
-            # QQ can push the same msg_id more than once; skip duplicates.
-            if duplicate?(msg_id)
-              Clacky::Logger.debug("[qq] duplicate msg_id ignored: #{msg_id}")
-              return
-            end
 
             event = {
               type: :message,

@@ -16790,8 +16790,8 @@ body.setup-mode {
 @media (hover: none), (pointer: coarse) { .input-queue-actions .btn-icon-sm { width: 36px; height: 36px; } }
 
 /* ── QQ one-click bind modal ─────────────────────────────────────────── */
-.qq-qr-modal { max-width: 420px; text-align: center; }
-.qq-qr-modal .modal-close { position: absolute; top: 10px; right: 14px; }
+.qq-qr-modal { position: relative; max-width: 420px; text-align: center; }
+.qq-qr-modal .modal-close-btn { position: absolute; top: 10px; right: 14px; }
 .qq-qr-hint { color: var(--color-text-secondary); font-size: 13px; margin: 8px 0 14px; }
 .qq-qr-status { min-height: 22px; font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--color-accent-primary); }
 .qq-qr-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }

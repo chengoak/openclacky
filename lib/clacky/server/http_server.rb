@@ -4762,7 +4762,7 @@ module Clacky
       def api_qq_qr_poll(req, res)
         task_id = parse_json_body(req)["task_id"].to_s
         stored  = qr_bind_store[task_id]
-        raise "bind session not found or expired, please restart" if stored.nil?
+        return json_response(res, 422, { ok: false, error: "bind session not found or expired, please restart" }) if stored.nil?
 
         binder = Clacky::Channel::Adapters::Qq::QrBinder.new
         result = binder.poll(task_id)
@@ -4787,7 +4787,7 @@ module Clacky
           json_response(res, 200, { ok: true, status: "pending" })
         end
       rescue StandardError => e
-        json_response(res, 422, { ok: false, error: e.message })
+        json_response(res, 502, { ok: false, error: e.message })
       end
 
       # Persist scanned QQ credentials and ensure the scanning user can talk

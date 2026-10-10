@@ -410,10 +410,10 @@ Tell the user (localize if they are chatting in Chinese):
 
 Wait for the reply. Parse with tolerant regex (`app_id=\S+`, `app_secret=\S+`, `sandbox=(true|false)`; default `sandbox=false` when omitted).
 
-Optionally validate the credentials before saving (best-effort; requires outbound access to api.bot.qq.com):
+Optionally validate the credentials before saving (best-effort; requires outbound access to api.bot.qq.com). The token endpoint is shared by production and sandbox — only the openapi host differs — so validation takes no `--sandbox` flag:
 
 ```bash
-ruby "SKILL_DIR/qq_setup.rb" --validate "<APP_ID> <APP_SECRET>" $([ "x<SANDBOX>" = "xtrue" ] && echo --sandbox)
+ruby "SKILL_DIR/qq_setup.rb" --validate "<APP_ID> <APP_SECRET>"
 ```
 
 #### Step 2 — Save credentials

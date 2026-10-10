@@ -15,9 +15,10 @@ require "json"
 require "net/http"
 require "uri"
 
-PORTAL_URL   = "https://q.qq.com"
-TOKEN_URL    = "https://api.bot.qq.com/app/getAppAccessToken"
-SANDBOX_HOST = "https://sandbox.api.sgroup.qq.com"
+PORTAL_URL = "https://q.qq.com"
+# The token endpoint is shared by production and sandbox ("不区分正式环境、沙箱环境");
+# only the openapi host differs.
+TOKEN_URL = "https://api.bot.qq.com/app/getAppAccessToken"
 
 def fail!(message)
   warn({ "ok" => false, "error" => message }.to_json)
@@ -36,9 +37,8 @@ def parse_pair(pair)
   [app_id, app_secret]
 end
 
-def request_token(app_id, app_secret, sandbox)
-  token_url = sandbox ? "#{SANDBOX_HOST}/app/getAppAccessToken" : TOKEN_URL
-  uri = URI(token_url)
+def request_token(app_id, app_secret)
+  uri = URI(TOKEN_URL)
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
   http.open_timeout = 10
@@ -57,7 +57,7 @@ end
 
 def validate!(pair, sandbox: false)
   app_id, app_secret = parse_pair(pair)
-  res = request_token(app_id, app_secret, sandbox)
+  res = request_token(app_id, app_secret)
   data = parse_body(res)
   if res.is_a?(Net::HTTPSuccess) && data["access_token"]
     puts({ "ok" => true, "app_id" => app_id, "sandbox" => sandbox, "expires_in" => data["expires_in"] }.to_json)

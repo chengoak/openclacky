@@ -169,6 +169,8 @@ module Clacky
                     end
             req   = klass.new(uri.request_uri)
             req["Authorization"] = "QQBot #{access_token}" unless token_endpoint?(uri)
+            # botpy attaches the bot AppID on every authenticated request.
+            req["X-Union-Appid"] = @app_id unless token_endpoint?(uri)
             req["Accept"]        = "application/json"
             req["User-Agent"]    = "openclacky-qq/1.0"
             extra_headers.each { |k, v| req[k] = v }
@@ -212,7 +214,7 @@ module Clacky
 
             uri = URI(TOKEN_URL)
             http = Net::HTTP.new(uri.host, uri.port)
-            http.use_ssl = true
+            http.use_ssl = uri.scheme == "https"
             http.open_timeout = @open_timeout
             http.read_timeout = @read_timeout
 
